@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -18,14 +19,10 @@ func TestIndexHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
+	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Expected ststus code 200, got %v", err)
-	}
-
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	responseData, _ := io.ReadAll(resp.Body)
-	if string(responseData) != mockUserResp {
-		t.Fatalf("Expect \n%v message \n, got \n%v", mockUserResp, string(responseData))
-	}
-
+	assert.Equal(t, mockUserResp, string(responseData))
 }
