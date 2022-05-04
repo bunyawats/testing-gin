@@ -48,6 +48,14 @@ var (
 		},
 		[]string{"method"},
 	)
+
+	httpDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "http_response_time_seconds",
+			Help: "Duration of HTTP response",
+		},
+		[]string{"path"},
+	)
 )
 
 // swagger:parameters recipes newRecipe
@@ -246,6 +254,7 @@ func init() {
 
 	prometheus.Register(totalRequests)
 	prometheus.Register(totalHTTPMethods)
+	prometheus.Register(httpDuration)
 }
 
 func main() {
@@ -256,11 +265,15 @@ func main() {
 
 func PrometheusMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		timer := prometheus.NewTimer(
+			httpDuration.WithLabelValues(
+				c.Request.URL.Path))
 		totalRequests.WithLabelValues(
 			c.Request.URL.Path).Inc()
 		totalHTTPMethods.WithLabelValues(
 			c.Request.Method).Inc()
 		c.Next()
+		timer.ObserveDuration()
 	}
 }
 
