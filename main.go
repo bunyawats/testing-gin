@@ -40,6 +40,14 @@ var (
 		},
 		[]string{"path"},
 	)
+
+	totalHTTPMethods = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_methods_total",
+			Help: "Number of requests per HTTP method",
+		},
+		[]string{"method"},
+	)
 )
 
 // swagger:parameters recipes newRecipe
@@ -237,6 +245,7 @@ func init() {
 	_ = json.Unmarshal([]byte(file), &recipes)
 
 	prometheus.Register(totalRequests)
+	prometheus.Register(totalHTTPMethods)
 }
 
 func main() {
@@ -248,8 +257,9 @@ func main() {
 func PrometheusMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		totalRequests.WithLabelValues(
-			c.Request.URL.Path,
-		).Inc()
+			c.Request.URL.Path).Inc()
+		totalHTTPMethods.WithLabelValues(
+			c.Request.Method).Inc()
 		c.Next()
 	}
 }
