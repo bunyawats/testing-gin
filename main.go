@@ -18,6 +18,8 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,7 +30,17 @@ import (
 	"github.com/rs/xid"
 )
 
-var recipes []Recipe
+var (
+	recipes []Recipe
+
+	totalRequests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Number of inconeing requests",
+		},
+		[]string{"path"},
+	)
+)
 
 // swagger:parameters recipes newRecipe
 type Recipe struct {
@@ -219,9 +231,12 @@ func GetRecipeHandler(c *gin.Context) {
 }
 
 func init() {
+
 	recipes = make([]Recipe, 0)
 	file, _ := ioutil.ReadFile("recipes.json")
 	_ = json.Unmarshal([]byte(file), &recipes)
+
+	prometheus.Register(totalRequests)
 }
 
 func main() {
@@ -230,15 +245,29 @@ func main() {
 
 }
 
+func PrometheusMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		totalRequests.WithLabelValues(
+			c.Request.URL.Path,
+		).Inc()
+		c.Next()
+	}
+}
+
 func SetupServer() *gin.Engine {
 
 	router := gin.Default()
+
+	router.Use(PrometheusMiddleware())
+
 	router.POST("/recipes", NewRecipeHandler)
 	router.GET("/recipes", ListRecipesHandler)
 	router.PUT("/recipes/:id", UpdateRecipeHandler)
 	router.DELETE("/recipes/:id", DeleteRecipeHandler)
 	router.GET("/recipes/:id", GetRecipeHandler)
 	router.GET("/", IndexHandler)
+	router.GET("/prometheus", gin.WrapH(promhttp.Handler()))
+
 	return router
 }
 
