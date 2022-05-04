@@ -14,3 +14,6 @@ GIN_MODE=release go test -v
 
 GIN_MODE=release go test -v -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
+
+docker-compose build
+docker-compose up -d

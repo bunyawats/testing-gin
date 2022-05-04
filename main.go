@@ -17,10 +17,11 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -32,6 +33,9 @@ import (
 
 var (
 	recipes []Recipe
+
+	//go:embed recipes.json
+	jsonByte []byte
 
 	totalRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -249,8 +253,11 @@ func GetRecipeHandler(c *gin.Context) {
 func init() {
 
 	recipes = make([]Recipe, 0)
-	file, _ := ioutil.ReadFile("recipes.json")
-	_ = json.Unmarshal([]byte(file), &recipes)
+	err := json.Unmarshal(jsonByte, &recipes)
+	if err != nil {
+		log.Panic(err)
+	}
+	fmt.Println("recipes:", recipes)
 
 	prometheus.Register(totalRequests)
 	prometheus.Register(totalHTTPMethods)
