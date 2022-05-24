@@ -1,7 +1,7 @@
 go get github.com/gin-gonic/gin\
 go get github.com/stretchr/testify\
-go get github.com/rs/xid
-go get github.com/prometheus/client_golang
+go get github.com/rs/xid\
+go get github.com/prometheus/client_golang\
 
 
 go get -u
